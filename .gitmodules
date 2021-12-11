@@ -1,0 +1,3 @@
+[submodule "Motor/libs/httplib"]
+	path = Motor/libs/httplib
+	url = https://github.com/rg3/libbcrypt
