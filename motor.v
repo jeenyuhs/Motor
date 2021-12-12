@@ -117,10 +117,6 @@ fn handle_conn(mut conn unix.StreamConn) {
 
 	domain := config.get('server.domain')
 
-	// this doesn't work the way i want it to be.
-	// gonna submit an issue and see if its a bug
-	// or a feature.
-
 	if connection.headers['Host'] in [
 		'c.$domain',
 		'ce.$domain',
@@ -129,8 +125,8 @@ fn handle_conn(mut conn unix.StreamConn) {
 		'c6.$domain',
 	] {
 		connection.handle<events.Bancho>()
-		// } else if connection.headers["Host"] == "osu.$domain" {
-		// 	connection.handle<events.Osu>()
+	} else if connection.headers['Host'] == 'osu.$domain' {
+		connection.handle<events.Osu>()
 	} else {
 		connection.send('I simply am not there.'.bytes(), 200)
 	}

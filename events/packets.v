@@ -16,7 +16,6 @@ pub fn change_action(mut io Buffer, mut p Player) {
 	p.map_id = io.read_i32()
 
 	utils.enqueue_players(packets.user_stats(p.stats()))
-	println(packets.user_stats(p.stats()))
 }
 
 pub fn send_public_message(mut io Buffer, mut p Player) {

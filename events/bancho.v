@@ -84,10 +84,6 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 	mut pid := 0
 
 	for !buffer.is_empty() {
-		if buffer.data.len < 7 {
-			break
-		}
-
 		pid = buffer.read_i16()
 		buffer.pos++
 		len := buffer.read_i32()
@@ -124,8 +120,6 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 				}
 			}
 		}
-
-		println('packet `$pid` ($player.uname), sending $player.queue')
 	}
 
 	conn.send(player.flush(), 200)
@@ -199,7 +193,11 @@ fn login(mut conn Connection) {
 
 			if c.auto_join {
 				ret << packets.chan_auto_join(name: c.name)
-				p.join_channel(mut c)
+				p.channels[c.name] = c
+				c.connected << p.token
+
+				ret << packets.chan_join(name: c.name)
+				c.update_info()
 			}
 		}
 	}
@@ -227,10 +225,3 @@ fn login(mut conn Connection) {
 	log('[blue]$p.uname[/blue] logged in')
 	conn.send(ret, 200)
 }
-
-// struct Osu {}
-
-// ['/'; 'GET']
-// pub fn (osu &Osu) index(mut conn Connection) {
-// 	conn.send('Hello, world!'.bytes(), 200)
-// }
