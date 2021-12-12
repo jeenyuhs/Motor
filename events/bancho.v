@@ -45,6 +45,10 @@ fn C.bcrypt_checkpw(&char, &char) int
 // 	}
 // }
 
+const (
+	ignored_packets = [79, 4]
+)
+
 struct Bancho {}
 
 ['/'; 'GET']
@@ -62,11 +66,14 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 	}
 
 	if 'osu-token' !in conn.headers {
+		println('header not found.')
 		login(mut conn)
 		return
 	}
 
-	mut player := collections.get_user_by_token(conn.headers['osu-token']) or {
+	token := conn.headers['osu-token']
+
+	mut player := collections.get_player(token) or {
 		mut tmp := packets.announce(msg: 'Server restarting...')
 		tmp << packets.server_restart(ms: 0)
 		conn.send(tmp, 200)
@@ -74,9 +81,14 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 	}
 
 	mut buffer := io.new_buffer(conn.body)
+	mut pid := 0
 
 	for !buffer.is_empty() {
-		pid := buffer.read_u16()
+		if buffer.data.len < 7 {
+			break
+		}
+
+		pid = buffer.read_i16()
 		buffer.pos++
 		len := buffer.read_i32()
 
@@ -85,7 +97,7 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 				change_action(mut buffer, mut player)
 			}
 			1 {
-				// send public message
+				send_public_message(mut buffer, mut player)
 			}
 			2 {
 				logout(mut buffer, mut player)
@@ -93,23 +105,27 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 			3 {
 				request_status_update(mut buffer, mut player)
 			}
-			4 {
-				ping(mut buffer, mut player)
-			}
-			30 {
-				lobby_join(mut buffer, mut player)
-			}
 			63 {
 				join_channel(mut buffer, mut player)
 			}
 			78 {
 				leave_channel(mut buffer, mut player)
 			}
+			85 {
+				user_stats_request(mut buffer, mut player)
+			}
 			else {
-				log('[yellow]warn:[/yellow] packet `$pid` is not implemented')
-				buffer.pos += len
+				if pid !in events.ignored_packets {
+					log('[yellow]warn:[/yellow] packet `$pid` is not implemented')
+				}
+
+				if len != 0 {
+					buffer.pos += len
+				}
 			}
 		}
+
+		println('packet `$pid` ($player.uname), sending $player.queue')
 	}
 
 	conn.send(player.flush(), 200)
@@ -119,12 +135,6 @@ fn login(mut conn Connection) {
 	conn.headers['cho-token'] = 'no'
 
 	mut ret := packets.protocol()
-	mut sw := time.new_stopwatch()
-
-	defer {
-		sw.stop()
-		log('[blue]info:[/blue] login took ${sw.elapsed().nanoseconds() / f64(1_000_000)}ms')
-	}
 
 	body := conn.body.bytestr().split('\n')
 
@@ -138,11 +148,21 @@ fn login(mut conn Connection) {
 		return
 	}
 
+	p.generate_token()
+
+	for token in online_players {
+		if token == p.token {
+			ret << packets.login_reply(id: -1)
+			ret << packets.announce(msg: "You're already logged in.")
+			conn.send(ret, 200)
+			return
+		}
+	}
+
 	p.ip = conn.headers['X-Real-IP'] or { '127.0.0.1' }
 
 	pwd := body[1]
 
-	sw.start()
 	if p.passhash.bytestr() !in cached_bcrypt {
 		if C.bcrypt_checkpw(&char(pwd.str), &char(p.passhash.bytestr().str)) != 0 {
 			log('[light red]error:[/light red] invalid password (NOT CACHED)')
@@ -165,28 +185,46 @@ fn login(mut conn Connection) {
 	p.login_time = time.now().unix_time()
 	p.get_stats()
 	p.get_friends()
-	p.generate_token()
 
 	cached_players[usafe].token = p.token
 
 	ret << packets.login_reply(id: p.id)
 	ret << packets.user_stats(p.stats())
+	ret << packets.user_presence(p.presence())
 	ret << packets.friends_list(ids: p.friends)
 
 	for mut c in channels {
-		if c.auto_join {
-			p.join_channel(mut c)
+		if c.public {
+			ret << packets.chan_info(c.info())
+
+			if c.auto_join {
+				ret << packets.chan_auto_join(name: c.name)
+				p.join_channel(mut c)
+			}
 		}
+	}
+
+	utils.enqueue_players(packets.user_presence(p.presence()))
+	utils.enqueue_players(packets.user_stats(p.stats()))
+
+	for _, player in cached_players {
+		if player.token !in online_players {
+			continue
+		}
+
+		ret << packets.user_presence(player.presence())
+		ret << packets.user_stats(player.stats())
 	}
 
 	ret << packets.chan_info_end()
 
 	ret << packets.announce(msg: 'Hello, World!')
 
-	cached_players[usafe] = p
-	online_players << p
+	cached_players[p.token] = p
+	online_players << p.token
 
 	conn.headers['cho-token'] = p.token
+	log('[blue]$p.uname[/blue] logged in')
 	conn.send(ret, 200)
 }
 

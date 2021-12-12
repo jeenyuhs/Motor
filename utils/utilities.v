@@ -33,8 +33,16 @@ pub fn attrs_to_map(attrs []string) map[string]string {
 	return attr
 }
 
-pub fn enqueue_players(b []byte) {
+[params]
+pub struct Ignored {
+	tokens []string
+}
+
+pub fn enqueue_players(b []byte, i Ignored) {
 	for _, mut player in cached_players {
+		if player.token in i.tokens {
+			continue
+		}
 		player.enqueue(b)
 	}
 }

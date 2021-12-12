@@ -89,6 +89,11 @@ fn (mut c Connection) parse_args() {
 
 			for arg in args {
 				t := arg.split('=')
+
+				if t.len != 2 {
+					continue
+				}
+
 				c.args[t[0]] = t[1]
 			}
 		}
@@ -167,5 +172,5 @@ pub fn (mut conn Connection) send(data []byte, code int) {
 	buf << '\r\n'.bytes()
 	buf << data
 
-	conn.socket.write(buf) or {}
+	conn.socket.write(buf) or { println(err) }
 }

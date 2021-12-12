@@ -16,6 +16,25 @@ pub fn change_action(mut io Buffer, mut p Player) {
 	p.map_id = io.read_i32()
 
 	utils.enqueue_players(packets.user_stats(p.stats()))
+	println(packets.user_stats(p.stats()))
+}
+
+pub fn send_public_message(mut io Buffer, mut p Player) {
+	io.read_string() // sender
+	msg := io.read_string()
+	chan_name := io.read_string()
+	io.read_i32() // sender id
+
+	if msg == '' {
+		return
+	}
+
+	mut c := collections.get_channel_by_name(chan_name) or {
+		log("[yellow]warn:[/yellow] $p.uname tried to send a message in $chan_name, although the channel doesn't exist")
+		return
+	}
+
+	c.send(msg, p)
 }
 
 pub fn logout(mut io Buffer, mut p Player) {
@@ -33,10 +52,6 @@ pub fn request_status_update(mut r Buffer, mut p Player) {
 }
 
 pub fn ping(mut r Buffer, mut p Player) {}
-
-pub fn lobby_join(mut r Buffer, mut p Player) {
-	println('lobby join')
-}
 
 pub fn join_channel(mut r Buffer, mut p Player) {
 	name := r.read_string()
@@ -57,5 +72,23 @@ pub fn leave_channel(mut r Buffer, mut p Player) {
 		return
 	}
 
-	p.leave_channel(mut c)
+	p.leave_channel(mut c, true)
+}
+
+pub fn user_stats_request(mut r Buffer, mut p Player) {
+	players := r.read_i32l()
+
+	for player in players {
+		if player == p.id {
+			continue
+		}
+
+		mut u := collections.get_player_by_id(player) or { continue }
+
+		if u.token !in online_players {
+			continue
+		}
+
+		u.enqueue(packets.user_stats(u.stats()))
+	}
 }

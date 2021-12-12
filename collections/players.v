@@ -2,9 +2,13 @@ module collections
 
 import objects { Player }
 
-pub fn get_player(usafe string) ?Player {
-	if usafe !in cached_players {
-		r := db.query("SELECT uname, id, privileges, passhash FROM players WHERE usafe = '$usafe'") or {
+pub fn get_player(token string) ?Player {
+	if token !in cached_players {
+		if token.split('-').len == 3 {
+			return error("[light red]error:[/light red] Player doesn't exist.")
+		}
+
+		r := db.query("SELECT uname, id, privileges, passhash FROM players WHERE usafe = '$token'") or {
 			return error('[light red]error:[/light red] $err.msg')
 		}
 
@@ -20,22 +24,22 @@ pub fn get_player(usafe string) ?Player {
 
 		return Player{
 			uname: mapped[0]['uname']
-			usafe: usafe
+			usafe: token
 			id: mapped[0]['id'].int()
 			privileges: mapped[0]['privileges'].int()
 			passhash: mapped[0]['passhash'].bytes()
 		}
 	}
 
-	return cached_players[usafe]
+	return cached_players[token]
 }
 
-pub fn get_user_by_token(token string) ?Player {
+pub fn get_player_by_id(id int) ?Player {
 	for _, player in cached_players {
-		if player.token == token {
+		if player.id == id {
 			return player
 		}
 	}
 
-	return error('player with token `$token` not found')
+	return error('player with id `$id` not found')
 }

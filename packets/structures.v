@@ -68,12 +68,20 @@ pub fn friends_list(friends Friends) []byte {
 	return io.make_packet<Friends>(.cho_friends_list, friends)
 }
 
-pub struct ChanJoin {
+pub struct Channel {
 	name string
 }
 
-pub fn chan_join(c ChanJoin) []byte {
-	return io.make_packet<ChanJoin>(.cho_channel_join_success, c)
+pub fn chan_join(c Channel) []byte {
+	return io.make_packet<Channel>(.cho_channel_join_success, c)
+}
+
+pub fn chan_auto_join(c Channel) []byte {
+	return io.make_packet<Channel>(.cho_channel_auto_join, c)
+}
+
+pub fn chan_leave(c Channel) []byte {
+	return io.make_packet<Channel>(.cho_channel_kick, c)
 }
 
 pub struct ChanInfo {
@@ -84,4 +92,46 @@ pub struct ChanInfo {
 
 pub fn chan_info(c ChanInfo) []byte {
 	return io.make_packet<ChanInfo>(.cho_channel_info, c)
+}
+
+pub struct UserPresence {
+	id       int
+	username string
+	timezone i8
+	country  u8
+	lon      f32
+	lat      f32
+	rank     int
+mut:
+	role i8
+}
+
+pub fn user_presence(ua UserPresence) []byte {
+	mut u := ua
+
+	// just make everyone supporter for now.
+	// i'll add enum support for this another time.
+	u.role = 5 // normal and supporter
+
+	return io.make_packet<UserPresence>(.cho_user_presence, u)
+}
+
+pub struct Message {
+	sender  string
+	msg     string
+	channel string
+	id      int
+}
+
+pub fn message(m Message) []byte {
+	return io.make_packet<Message>(.cho_send_message, m)
+}
+
+pub struct Logout {
+	id  int
+	idk u8
+}
+
+pub fn logout(l Logout) []byte {
+	return io.make_packet<Logout>(.cho_user_logout, l)
 }

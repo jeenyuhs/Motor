@@ -3,6 +3,8 @@ module main
 import utils { log }
 import objects
 import config as conf
+import packets
+import collections
 import mysql
 import events
 import web
@@ -60,6 +62,24 @@ fn main() {
 
 	log('[green]  finished:[/green] initialized channels.')
 
+	mut bot := collections.get_player(config.get('server.bot_name')) or {
+		log('[light red]  failure:[/light red] bot account not found in database')
+		log('[light red]$err.msg[/light red')
+		return
+	}
+
+	bot.generate_token()
+	bot.is_bot = true
+
+	cached_players[bot.usafe] = bot
+	online_players << bot.token
+
+	for mut token in online_players {
+		mut u := cached_players[token]
+		u.enqueue(packets.user_presence(bot.presence()))
+		u.enqueue(packets.user_stats(bot.stats()))
+	}
+
 	mut listener := unix.listen_stream(config.get('server.address')) or {
 		log('[light red]  failure:[/light red] could not listen on port, maybe the address is already in use? error code `$err.code`')
 		return
@@ -77,7 +97,7 @@ fn main() {
 			break
 		}
 
-		go handle_conn(mut conn)
+		handle_conn(mut conn)
 	}
 }
 

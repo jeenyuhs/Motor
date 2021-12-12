@@ -15,7 +15,7 @@ pub fn new_buffer(data []byte) Buffer {
 }
 
 pub fn (b &Buffer) is_empty() bool {
-	return b.pos >= b.data[b.pos..].len && b.data[b.pos..].len == 0
+	return (b.pos >= b.data[b.pos..].len && b.data[b.pos..].len == 0) || b.data.len < 7
 }
 
 pub fn (mut b Buffer) read_any(size int) &byte {
@@ -59,6 +59,17 @@ pub fn (mut b Buffer) read_i64() i64 {
 
 pub fn (mut b Buffer) read_u64() u64 {
 	return unsafe { *(&u64(b.read_any(8))) }
+}
+
+pub fn (mut b Buffer) read_i32l() []int {
+	len := b.read_i16()
+	mut ret := []int{}
+
+	for _ in 0 .. len {
+		ret << b.read_i32()
+	}
+
+	return ret
 }
 
 pub fn (mut b Buffer) read_string() string {

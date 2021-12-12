@@ -1,5 +1,5 @@
 # Motor
-Motor is my second attempt at making an osu! server hybrid in V.
+Motor is my second attempt at making an osu! server hybrid (soom:tm:) in V.
 
 It aims for stability and performance. There'll be benchmarks soon.
 

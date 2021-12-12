@@ -14,10 +14,10 @@ pub mut:
 	token      string
 
 	ip             string
-	country        string
-	timezone       u8
-	lat            f64
-	lon            f64
+	country        u8
+	timezone       i8
+	lat            f32
+	lon            f32
 	client_version string
 
 	mode       u8
@@ -32,10 +32,10 @@ pub mut:
 	p_count int
 	t_score i64
 	level   f32
-	rank    i16
+	rank    int
 	pp      i16
 
-	channels []Channel
+	channels map[string]Channel
 	game     string
 	friends  []int
 
@@ -72,38 +72,56 @@ pub fn (mut p Player) generate_token() {
 }
 
 pub fn (mut p Player) quit() {
-	for mut c in p.channels {
-		p.leave_channel(mut c)
+	for _, mut c in p.channels {
+		p.leave_channel(mut c, false)
 	}
 
-	index := online_players.index(p)
+	index := online_players.index(p.token)
 	online_players.pop(index)
+
+	utils.enqueue_players(packets.logout(id: p.id))
 }
 
-pub fn (mut p Player) leave_channel(mut c Channel) {
-	if !p.channels.contains(*c) {
+pub fn (p &Player) has_channel(c &Channel) bool {
+	for name, _ in p.channels {
+		if name == c.name {
+			return true
+		}
+	}
+	return false
+}
+
+pub fn (mut p Player) leave_channel(mut c Channel, kicked bool) {
+	if !p.has_channel(c) {
 		return
 	}
 
-	// this can return -1, but i assume it wont, since
-	// they've had to have been initialized to do this.
+	p.channels.delete(c.name)
 
-	p.channels.pop(p.channels.index(c))
-	c.connected.pop(c.connected.index(p))
+	if p.token in c.connected {
+		c.connected.pop(c.connected.index(p.token))
+	}
+
+	if kicked {
+		p.enqueue(packets.chan_leave(name: c.name))
+	}
 
 	c.update_info()
+	log('[light purple]$p.uname left channel [yellow]$c.name[/yellow][/light purple]')
 }
 
 pub fn (mut p Player) join_channel(mut c Channel) {
-	if p.channels.contains(*c) {
+	if p.has_channel(c) {
 		return
 	}
 
-	p.channels << c
-	c.connected << p
+	p.channels[c.name] = c
+	c.connected << p.token
 
 	p.enqueue(packets.chan_join(name: c.name))
 	c.update_info()
+
+	log('[light purple]$p.uname joined channel [yellow]$c.name[/yellow][/light purple]')
 }
 
 pub fn (mut p Player) get_friends() {
@@ -140,7 +158,7 @@ pub fn (mut p Player) get_stats() {
 
 pub fn (mut p Player) flush() []byte {
 	defer {
-		p.queue = []byte{}
+		p.queue.clear()
 	}
 	return p.queue
 }
@@ -149,7 +167,7 @@ pub fn (mut p Player) enqueue(b []byte) {
 	p.queue << b
 }
 
-pub fn (mut p Player) stats() packets.UserStats {
+pub fn (p &Player) stats() packets.UserStats {
 	return packets.UserStats{
 		id: p.id
 		status: p.status_typ
@@ -159,10 +177,22 @@ pub fn (mut p Player) stats() packets.UserStats {
 		play_mode: p.mode
 		map_id: p.map_id
 		r_score: p.r_score
-		accuracy: p.acc
+		accuracy: p.acc / 100.0
 		playcount: p.p_count
 		t_score: p.t_score
 		rank: p.rank
 		pp: p.pp
+	}
+}
+
+pub fn (p &Player) presence() packets.UserPresence {
+	return packets.UserPresence{
+		id: p.id
+		username: p.uname
+		timezone: p.timezone
+		country: p.country
+		lon: p.lon
+		lat: p.lat
+		rank: p.rank
 	}
 }

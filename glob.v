@@ -9,6 +9,6 @@ __global (
 	db             mysql.Connection
 	cached_players map[string]Player
 	cached_bcrypt  map[string]string
-	online_players []Player
+	online_players []string
 	channels       []Channel
 )
