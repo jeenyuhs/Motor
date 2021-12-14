@@ -33,7 +33,7 @@ pub fn send_public_message(mut io Buffer, mut p Player) {
 		return
 	}
 
-	c.send(msg, p)
+	c.send(msg, mut p)
 }
 
 pub fn logout(mut io Buffer, mut p Player) {

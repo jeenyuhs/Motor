@@ -3,6 +3,7 @@ module objects
 import packets
 import utils { log }
 
+[heap]
 pub struct Channel {
 pub:
 	raw         string
@@ -45,16 +46,16 @@ pub struct Ignored {
 }
 
 pub fn (mut c Channel) enqueue(b []byte, i Ignored) {
-	for _, mut player in cached_players {
-		if player.token !in c.connected || player.is_bot || player.token in i.tokens {
+	for token in c.connected {
+		if token in i.tokens {
 			continue
 		}
-
+		mut player := cached_players[token]
 		player.enqueue(b)
 	}
 }
 
-pub fn (mut c Channel) send(msg string, p Player) {
+pub fn (mut c Channel) send(msg string, mut p Player) {
 	if c.read_only {
 		return
 	}

@@ -2,7 +2,7 @@ module collections
 
 import objects { Player }
 
-pub fn get_player(token string) ?Player {
+pub fn get_player(token string) ?&Player {
 	if token !in cached_players {
 		if token.split('-').len == 3 {
 			return error("[light red]error:[/light red] Player doesn't exist.")
@@ -22,7 +22,7 @@ pub fn get_player(token string) ?Player {
 			return error('[light red]error:[/light red] Player was not found.')
 		}
 
-		return Player{
+		return &Player{
 			uname: mapped[0]['uname']
 			usafe: token
 			id: mapped[0]['id'].int()
@@ -34,7 +34,7 @@ pub fn get_player(token string) ?Player {
 	return cached_players[token]
 }
 
-pub fn get_player_by_id(id int) ?Player {
+pub fn get_player_by_id(id int) ?&Player {
 	for _, player in cached_players {
 		if player.id == id {
 			return player

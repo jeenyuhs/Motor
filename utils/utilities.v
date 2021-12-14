@@ -39,10 +39,10 @@ pub struct Ignored {
 }
 
 pub fn enqueue_players(b []byte, i Ignored) {
-	for _, mut player in cached_players {
-		if player.token in i.tokens {
-			continue
+	for token in online_players {
+		if token in cached_players {
+			mut player := cached_players[token]
+			player.queue << b
 		}
-		player.enqueue(b)
 	}
 }

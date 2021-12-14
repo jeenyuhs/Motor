@@ -96,8 +96,6 @@ fn (mut s Stream) write_i32_l(vals []int) {
 pub fn make_packet<T>(packet Packets, data &T) []byte {
 	mut s := Stream{}
 
-	println('Making packet: ${int(packet)}, structure: ${typeof(data).name}')
-
 	s.write_u16(u16(packet))
 	s.write_u8(0)
 	s.write_i32(0)

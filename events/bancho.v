@@ -21,30 +21,6 @@ fn C.bcrypt_checkpw(&char, &char) int
 // This had a lot of problems, so I'm not going to
 // bother working on it further on.
 
-// fn find_and_execute_packets<T>(mut io Buffer, mut player Player) ? {
-// 	mut tmp := T{}
-
-// 	$for method in T.methods {
-// 		for {
-// 			if io.data.len < io.pos || io.pos == io.data.len {
-// 				println('okwqpdpqwokd')
-// 				return
-// 			}
-
-// 			tmp.id = io.read_u16()
-// 			io.pos++
-// 			len := io.read_i32()
-
-// 			if len != 0 {
-// 				io.pos += len
-// 			}
-
-// 			attrs := utils.attrs_to_map(method.attrs)
-// 			println('got ${attrs['id']}, expected $tmp.id')
-// 		}
-// 	}
-// }
-
 const (
 	ignored_packets = [79, 4]
 )
@@ -66,7 +42,6 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 	}
 
 	if 'osu-token' !in conn.headers {
-		println('header not found.')
 		login(mut conn)
 		return
 	}
@@ -180,8 +155,6 @@ fn login(mut conn Connection) {
 	p.get_stats()
 	p.get_friends()
 
-	cached_players[usafe].token = p.token
-
 	ret << packets.login_reply(id: p.id)
 	ret << packets.user_stats(p.stats())
 	ret << packets.user_presence(p.presence())
@@ -193,11 +166,7 @@ fn login(mut conn Connection) {
 
 			if c.auto_join {
 				ret << packets.chan_auto_join(name: c.name)
-				p.channels[c.name] = c
-				c.connected << p.token
-
-				ret << packets.chan_join(name: c.name)
-				c.update_info()
+				p.join_channel(mut *c)
 			}
 		}
 	}

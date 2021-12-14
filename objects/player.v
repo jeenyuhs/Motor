@@ -4,6 +4,7 @@ import utils { log }
 import rand
 import packets
 
+[heap]
 pub struct Player {
 pub mut:
 	uname      string
@@ -35,7 +36,7 @@ pub mut:
 	rank    int
 	pp      i16
 
-	channels map[string]Channel
+	channels map[string]&Channel
 	game     string
 	friends  []int
 
@@ -73,7 +74,7 @@ pub fn (mut p Player) generate_token() {
 
 pub fn (mut p Player) quit() {
 	for _, mut c in p.channels {
-		p.leave_channel(mut c, false)
+		p.leave_channel(mut *c, false)
 	}
 
 	index := online_players.index(p.token)
@@ -92,7 +93,7 @@ pub fn (p &Player) has_channel(c &Channel) bool {
 }
 
 pub fn (mut p Player) leave_channel(mut c Channel, kicked bool) {
-	if !p.has_channel(c) {
+	if !p.has_channel(*c) {
 		return
 	}
 
@@ -111,11 +112,11 @@ pub fn (mut p Player) leave_channel(mut c Channel, kicked bool) {
 }
 
 pub fn (mut p Player) join_channel(mut c Channel) {
-	if p.has_channel(c) {
+	if p.has_channel(*c) {
 		return
 	}
 
-	p.channels[c.name] = c
+	p.channels[c.name] = &c
 	c.connected << p.token
 
 	p.enqueue(packets.chan_join(name: c.name))

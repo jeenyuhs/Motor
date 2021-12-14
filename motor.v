@@ -49,7 +49,7 @@ fn main() {
 	chans := db.query('SELECT * FROM channels') ?
 
 	for c in chans.maps() {
-		channels << objects.Channel{
+		channels << &objects.Channel{
 			name: c['name']
 			description: c['description']
 			public: c['public'] == '1'
@@ -74,11 +74,7 @@ fn main() {
 	cached_players[bot.usafe] = bot
 	online_players << bot.token
 
-	for mut token in online_players {
-		mut u := cached_players[token]
-		u.enqueue(packets.user_presence(bot.presence()))
-		u.enqueue(packets.user_stats(bot.stats()))
-	}
+	utils.enqueue_players(packets.user_presence(bot.presence()))
 
 	mut listener := unix.listen_stream(config.get('server.address')) or {
 		log('[light red]  failure:[/light red] could not listen on port, maybe the address is already in use? error code `$err.code`')
@@ -97,7 +93,7 @@ fn main() {
 			break
 		}
 
-		handle_conn(mut conn)
+		go handle_conn(mut conn)
 	}
 }
 
