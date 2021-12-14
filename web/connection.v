@@ -30,10 +30,9 @@ pub fn (mut r Router) register(path string, handle fn (mut c Connection) []byte,
 }
 
 pub struct Connection {
-mut:
-	data_  []byte
-	socket unix.StreamConn
 pub mut:
+	data_    []byte
+	socket   unix.StreamConn
 	method   string
 	path     string
 	http_ver string
@@ -68,8 +67,8 @@ pub fn new_conn(body []byte, socket unix.StreamConn) Connection {
 
 fn (mut c Connection) parse_args() {
 	if c.method == 'POST' {
-		if c.headers['Content-Type'] == 'multipart/form-data' {
-			boundary := c.headers['Content-Type'].split(';')[1].split('=')[1]
+		if c.headers['content-type'].starts_with('multipart/form-data') {
+			boundary := c.headers['content-type'].split(';')[1].split('=')[1]
 
 			for arg in c.data_.bytestr().split('--$boundary')[1..] {
 				if arg == '--\r\n' {
