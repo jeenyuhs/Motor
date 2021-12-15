@@ -125,6 +125,19 @@ pub fn (mut p Player) join_channel(mut c Channel) {
 	log('[light purple]$p.uname joined channel [yellow]$c.name[/yellow][/light purple]')
 }
 
+pub fn (p &Player) send_msg(msg string, mut reciever Player) {
+	if reciever.is_bot {
+		return
+	}
+
+	reciever.enqueue(packets.message(
+		sender: p.uname
+		msg: msg
+		channel: reciever.uname
+		id: p.id
+	))
+}
+
 pub fn (mut p Player) get_friends() {
 	r := db.query('SELECT friend_id FROM friends WHERE user_id = $p.id LIMIT 1') or { return }
 

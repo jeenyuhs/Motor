@@ -52,6 +52,20 @@ pub fn request_status_update(mut r Buffer, mut p Player) {
 
 pub fn ping(mut r Buffer, mut p Player) {}
 
+pub fn send_private_message(mut r Buffer, mut p Player) {
+	r.read_string()
+	msg := r.read_string()
+	reciever_ := r.read_string()
+	r.read_i32()
+
+	mut reciever := collections.get_player_by_uname(reciever_) or {
+		log('[yellow]warn:[/yellow] $p.uname tried to send a private message to $reciever_, although the player is not online')
+		return
+	}
+
+	p.send_msg(msg, mut reciever)
+}
+
 pub fn join_channel(mut r Buffer, mut p Player) {
 	name := r.read_string()
 

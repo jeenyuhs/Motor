@@ -76,6 +76,9 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 			3 {
 				request_status_update(mut buffer, mut player)
 			}
+			25 {
+				send_private_message(mut buffer, mut player)
+			}
 			63 {
 				join_channel(mut buffer, mut player)
 			}

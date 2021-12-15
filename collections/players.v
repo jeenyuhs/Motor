@@ -34,6 +34,16 @@ pub fn get_player(token string) ?&Player {
 	return cached_players[token]
 }
 
+pub fn get_player_by_uname(uname string) ?&Player {
+	for _, player in cached_players {
+		if player.uname == uname {
+			return player
+		}
+	}
+
+	return error('player with username `$uname` not found')
+}
+
 pub fn get_player_by_id(id int) ?&Player {
 	for _, player in cached_players {
 		if player.id == id {
