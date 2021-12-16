@@ -12,7 +12,7 @@ $ git clone https://github.com/barrack-obama/Motor
 ...
 
 $ cd Motor
-Motor$ git git submodule init && git submodule update
+Motor$ git submodule init && git submodule update
 
 // for development
 Motor$ make dev 
