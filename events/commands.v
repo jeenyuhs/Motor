@@ -6,8 +6,6 @@ import config { parse_config }
 import packets
 import utils
 
-// add privileges check
-
 fn handle_command<T>(msg string, mut c Channel, mut p Player) {
 	args := msg.split(' ')[1..] // remove command from args
 	cmd := msg.split(' ')[0][1..]
@@ -18,9 +16,22 @@ fn handle_command<T>(msg string, mut c Channel, mut p Player) {
 		attrs := utils.attrs_to_map(method.attrs)
 
 		if 'command' in attrs && attrs['command'] == cmd {
-			// if 'privileges' in attrs {
-			// 	ctx.privileges = attrs['privileges']
-			// }
+			if 'privileges' in attrs {
+				match attrs['privileges'] {
+					'admin' { ctx.privileges = .admin }
+					'dev' { ctx.privileges = .dev }
+					'moderator' { ctx.privileges = .moderator }
+					'bat' { ctx.privileges = .bat }
+					'normal' { ctx.privileges = .normal }
+					'verified' { ctx.privileges = .verified }
+					'supporter' { ctx.privileges = .supporter }
+					else { panic('Invalid privilege') }
+				}
+			}
+
+			if !p.privileges.has_flag(ctx.privileges) {
+				return
+			}
 
 			ctx.player = p
 			ctx.channel = c
@@ -50,6 +61,7 @@ fn (mut ctx Command) pong() {
 }
 
 [command: 'config']
+[privileges: 'dev']
 fn (mut ctx Command) reload_config() {
 	ctx.channel.send('Reloading config...', mut bot)
 
@@ -61,6 +73,7 @@ fn (mut ctx Command) reload_config() {
 	ctx.channel.send('Config reloaded!', mut bot)
 }
 
+[privileges: 'admin']
 [command: 'alert']
 fn (mut ctx Command) alert() {
 	if ctx.args.len < 1 {
@@ -69,4 +82,5 @@ fn (mut ctx Command) alert() {
 	}
 
 	utils.enqueue_players(packets.announce(msg: ctx.args[0]))
+	ctx.channel.send('Done.', mut bot)
 }
