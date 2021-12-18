@@ -2,7 +2,9 @@ module objects
 
 import utils { log }
 import rand
+import constants
 import packets
+import time
 
 [heap]
 pub struct Player {
@@ -10,7 +12,7 @@ pub mut:
 	uname      string
 	usafe      string
 	id         int
-	privileges int
+	privileges constants.Privileges
 	passhash   []byte
 	token      string
 
@@ -38,6 +40,9 @@ pub mut:
 
 	channels map[string]&Channel
 	game     string
+	party    string
+	groups   string
+	clan     string
 	friends  []int
 
 	last_update f64
@@ -81,6 +86,31 @@ pub fn (mut p Player) quit() {
 	online_players.pop(index)
 
 	utils.enqueue_players(packets.logout(id: p.id))
+}
+
+pub fn (mut p Player) handle_friend(id int) {
+	if p.friends.contains(id) {
+		p.friends.pop(p.friends.index(id))
+	} else {
+		p.friends << id
+	}
+
+	query := db.query('SELECT 1 FROM friends WHERE user_id = $p.id AND friend_id = $id') or {
+		println(err)
+		return
+	}
+
+	if query.n_rows() == 1 {
+		db.query('DELETE FROM friends WHERE user_id = $p.id AND friend_id = $id') or {
+			println(err)
+			return
+		}
+	} else {
+		db.query('INSERT INTO friends (user_id, friend_id, since) VALUES ($p.id, $id, $time.now().unix_time())') or {
+			println(err)
+			return
+		}
+	}
 }
 
 pub fn (p &Player) has_channel(c &Channel) bool {
@@ -168,6 +198,10 @@ pub fn (mut p Player) get_stats() {
 	p.p_count = result['p_count'].int()
 	p.level = result['level'].i8()
 	p.pp = result['pp'].i16()
+}
+
+pub fn (p &Player) update_privileges_sql() {
+	db.query('UPDATE users SET privileges = ${int(p.privileges)} WHERE id = $p.id') or { return }
 }
 
 pub fn (mut p Player) flush() []byte {

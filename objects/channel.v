@@ -56,7 +56,7 @@ pub fn (mut c Channel) enqueue(b []byte, i Ignored) {
 }
 
 pub fn (mut c Channel) send(msg string, mut p Player) {
-	if c.read_only {
+	if c.read_only || !p.privileges.has_flag(.verified) {
 		return
 	}
 

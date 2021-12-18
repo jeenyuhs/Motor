@@ -82,6 +82,9 @@ fn (b &Bancho) handle_post(mut conn Connection) {
 			63 {
 				join_channel(mut buffer, mut player)
 			}
+			73, 74 {
+				friend(mut buffer, mut player)
+			}
 			78 {
 				leave_channel(mut buffer, mut player)
 			}
@@ -131,8 +134,6 @@ fn login(mut conn Connection) {
 		}
 	}
 
-	p.ip = conn.headers['X-Real-IP'] or { '127.0.0.1' }
-
 	pwd := body[1]
 
 	if p.passhash.bytestr() !in cached_bcrypt {
@@ -152,6 +153,20 @@ fn login(mut conn Connection) {
 		}
 	}
 
+	if p.privileges.has_flag(.banned) {
+		log("[light purple]$p.uname[/light purple] tried to login, but failed to due so, since they're banned.")
+		ret << packets.login_reply(id: -3)
+		conn.send(ret, 200)
+		return
+	}
+
+	// if p.privileges.has(.pending) {
+	// 	p.privileges.set(.verified)
+	// 	p.privileges.toggle(.pending)
+	// 	go p.update_privileges_sql()
+	// }
+
+	p.ip = conn.headers['X-Real-IP'] or { '127.0.0.1' }
 	p.client_version = body[2].split('|')[0]
 
 	p.login_time = time.now().unix_time()

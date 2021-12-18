@@ -11,4 +11,5 @@ __global (
 	cached_bcrypt  map[string]string
 	online_players []string
 	channels       []&Channel
+	bot            &Player
 )

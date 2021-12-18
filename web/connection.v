@@ -171,5 +171,5 @@ pub fn (mut conn Connection) send(data []byte, code int) {
 	buf << '\r\n'.bytes()
 	buf << data
 
-	conn.socket.write(buf) or { println(err) }
+	conn.socket.write(buf) or {}
 }

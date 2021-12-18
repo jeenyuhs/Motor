@@ -62,9 +62,8 @@ fn main() {
 
 	log('[green]  finished:[/green] initialized channels.')
 
-	mut bot := collections.get_player(config.get('server.bot_name')) or {
+	bot = collections.get_player(config.get('server.bot_name')) or {
 		log('[light red]  failure:[/light red] bot account not found in database')
-		log('[light red]$err.msg[/light red')
 		return
 	}
 

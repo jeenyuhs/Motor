@@ -1,6 +1,7 @@
 module collections
 
 import objects { Player }
+import constants { Privileges }
 
 pub fn get_player(token string) ?&Player {
 	if token !in cached_players {
@@ -26,7 +27,7 @@ pub fn get_player(token string) ?&Player {
 			uname: mapped[0]['uname']
 			usafe: token
 			id: mapped[0]['id'].int()
-			privileges: mapped[0]['privileges'].int()
+			privileges: Privileges(mapped[0]['privileges'].int())
 			passhash: mapped[0]['passhash'].bytes()
 		}
 	}

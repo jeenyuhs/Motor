@@ -15,7 +15,9 @@ pub fn change_action(mut io Buffer, mut p Player) {
 	p.mode = io.read_byte()
 	p.map_id = io.read_i32()
 
-	utils.enqueue_players(packets.user_stats(p.stats()))
+	if p.privileges.has(.verified) {
+		utils.enqueue_players(packets.user_stats(p.stats()))
+	}
 }
 
 pub fn send_public_message(mut io Buffer, mut p Player) {
@@ -34,6 +36,10 @@ pub fn send_public_message(mut io Buffer, mut p Player) {
 	}
 
 	c.send(msg, mut p)
+
+	if msg.starts_with(config.get('server.command_prefix')) {
+		handle_command<Command>(msg, mut c, mut p)
+	}
 }
 
 pub fn logout(mut io Buffer, mut p Player) {
@@ -63,7 +69,14 @@ pub fn send_private_message(mut r Buffer, mut p Player) {
 		return
 	}
 
-	p.send_msg(msg, mut reciever)
+	if reciever == bot {
+		bot.send_msg("I'm being called away to London for a few days.", mut p)
+		return
+	}
+
+	if p.privileges.has_flag(.verified) {
+		p.send_msg(msg, mut reciever)
+	}
 }
 
 pub fn join_channel(mut r Buffer, mut p Player) {
@@ -75,6 +88,10 @@ pub fn join_channel(mut r Buffer, mut p Player) {
 	}
 
 	p.join_channel(mut c)
+}
+
+pub fn friend(mut r Buffer, mut p Player) {
+	p.handle_friend(r.read_i32())
 }
 
 pub fn leave_channel(mut r Buffer, mut p Player) {
