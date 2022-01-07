@@ -1,3 +1,6 @@
+finally lost all interest in osu!, i will work more on this if i gain interest again.
+
+
 # Motor
 Motor is my second attempt at making an osu! server hybrid (soom:tm:) in V.
 
